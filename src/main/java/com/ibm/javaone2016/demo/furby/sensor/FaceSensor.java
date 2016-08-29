@@ -21,99 +21,92 @@ public class FaceSensor extends AbstractActiveSensor {
 
 	VideoCapture camera;
 	CascadeClassifier cc;
-	boolean found=false;
-	
-	
+	boolean found = false;
+
 	@Override
 	public String[] getCommands() {
-		
-		return new String[]{"snap"};
+
+		return new String[] { "snap" };
 	}
 
 	@Override
 	public void handleCommand(String command, JsonObject object) {
-		
-		if(command.equals("snap")) {
-			
-			Mat frame = new Mat();
-			camera.read(frame);
-			 MatOfRect faces= new MatOfRect();
-			cc.detectMultiScale(frame, faces);
-			if(!faces.empty()) {
-				Rect[] facesArray=faces.toArray();
-				
-				for (int i = 0; i < facesArray.length; i++)
-				    Imgproc.rectangle(frame, facesArray[i].tl(), facesArray[i].br(), new Scalar(0, 255, 0, 255), 3);
-			
-			}
-			
-			File face=newFile("face.jpg");
-			Imgcodecs.imwrite(face.getAbsolutePath(), frame);
-			
-			
-			publishEvent("face", "face",newURL("face.jpg"));
-						
+
+		if (command.equals("snap")) {
+
+			publishEvent("face", "face", newURL("face.jpg"));
+
 		}
 
 	}
 
 	@Override
 	public void configure(JsonObject serviceConfig) {
-		JsonArray libs=serviceConfig.get("libs").getAsJsonArray();
+		JsonArray libs = serviceConfig.get("libs").getAsJsonArray();
 		libs.forEach(new Consumer<JsonElement>() {
 
 			@Override
 			public void accept(JsonElement t) {
-				LOG.info("loading "+t.getAsString());
+				LOG.info("loading " + t.getAsString());
 				System.load(t.getAsString());
 			}
 		});
-		
-		int device=0;
-		
-		JsonElement deviceElement=serviceConfig.get("device");
-		if(deviceElement!=null) {
-			device=deviceElement.getAsInt();
+
+		int device = 0;
+
+		JsonElement deviceElement = serviceConfig.get("device");
+		if (deviceElement != null) {
+			device = deviceElement.getAsInt();
 		}
-		
-		 camera = new VideoCapture(device);
-		 
-		 LOG.info("camera is "+camera);
-		 cc=new CascadeClassifier("/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");	
+
+		camera = new VideoCapture(device);
+
+		LOG.info("camera is " + camera);
+		cc = new CascadeClassifier("/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");
 	}
 
 	@Override
 	public void start() {
-		
-		 MatOfRect faces= new MatOfRect();
-		
-		while(isAlive()) {
-		
+
+		MatOfRect faces = new MatOfRect();
+
+		while (isAlive()) {
+
 			try {
-				
+
 				Mat frame = new Mat();
 				camera.read(frame);
 				cc.detectMultiScale(frame, faces);
-				if(!faces.empty()) {
-					 if(!found) {
-						 publishEvent("face", "count",faces.toArray().length);
-						 found=true;
-					 }
-					
-					
+
+				if (!faces.empty()) {
+
+					if (!found) {
+
+						Rect[] facesArray = faces.toArray();
+						for (int i = 0; i < facesArray.length; i++) {
+							Imgproc.rectangle(frame, facesArray[i].tl(), facesArray[i].br(), new Scalar(0, 255, 0, 255),3);
+						}
+
+						File face = newFile("face.jpg");
+						Imgcodecs.imwrite(face.getAbsolutePath(), frame);
+
+						publishEvent("face", "count", faces.toArray().length);
+						found = true;
+					}
+
 				} else {
-					 if(found) {
-						 publishEvent("face", "count",0);
-						 found=false;
-					 }
+					if (found) {
+						publishEvent("face", "count", 0);
+						found = false;
+					}
 				}
 				Thread.sleep(500);
-				
+
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}	
+		}
 	}
 
 }
