@@ -1,5 +1,10 @@
 package com.ibm.javaone2016.demo.furby;
 
+import java.io.File;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -18,55 +23,53 @@ import com.ibm.iotf.client.device.Command;
 import com.ibm.iotf.client.device.CommandCallback;
 import com.ibm.iotf.client.device.DeviceClient;
 
-public class Controller implements CommandCallback,Runnable {
+public class Controller implements CommandCallback, Runnable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ActiveSensor.class);
-	
-	private DeviceClient client;
 
-	private List<Thread> services = new  LinkedList<>();
-	private Map<String,ActiveSensor> commands=new HashMap<>();
-	
+	private DeviceClient client;
+	private int port;
+	private File root;
+	private List<Thread> services = new LinkedList<>();
+	private Map<String, ActiveSensor> commands = new HashMap<>();
+
 	private BlockingQueue<Command> queue = new LinkedBlockingQueue<Command>();
 
-	public Controller(DeviceClient client)  {
+	public Controller(File root,int port,DeviceClient client) {
 
 		this.client = client;
-	
-		
+		this.root=root;
+		this.port=port;
 	}
 
 	public void addService(Sensor service) {
-		
+
 		service.setController(this);
-		
-		if(service instanceof PassiveSensor) {
-			services.add(new Thread(new PassiveSensorRunnable((PassiveSensor)service)));
-		}
-		else {
-			ActiveSensor at=(ActiveSensor)service;
+
+		if (service instanceof PassiveSensor) {
+			services.add(new Thread(new PassiveSensorRunnable((PassiveSensor) service)));
+		} else {
+			ActiveSensor at = (ActiveSensor) service;
 			services.add(new Thread(at));
 		}
-		
-		LOG.info("added service "+service.getClass().getName());
-		
-		if(service instanceof ActiveSensor) {
-			ActiveSensor as=(ActiveSensor)service;
-		String[] commandNames=as.getCommands();
-		if(commandNames!=null) {
-			for(String command:commandNames) {
-				if(command!=null) {
-					command=command.trim().toLowerCase();
-					if(!command.equals("")) {
-						commands.put(command, as);
-						LOG.info("registered command "+command+" for "+as.getClass().getName());
+
+		LOG.info("added service " + service.getClass().getName());
+
+		if (service instanceof ActiveSensor) {
+			ActiveSensor as = (ActiveSensor) service;
+			String[] commandNames = as.getCommands();
+			if (commandNames != null) {
+				for (String command : commandNames) {
+					if (command != null) {
+						command = command.trim().toLowerCase();
+						if (!command.equals("")) {
+							commands.put(command, as);
+							LOG.info("registered command " + command + " for " + as.getClass().getName());
+						}
 					}
 				}
 			}
 		}
-		}
-		
-		
 
 	}
 
@@ -77,27 +80,36 @@ public class Controller implements CommandCallback,Runnable {
 		}
 
 		String className = event.getClass().getSimpleName();
-		switch (className) {
-		case "byte[]":
-			event = convertByteArray((byte[]) event);
-			className = "bytestream";
-			break;
-		case "Double":
-			className = "double";
-		case "String":
-			className = "string";
-			break;
-		case "JsonObject":
-			className = "json";
-			break;
-		default:
-			event = "unknown";
 
+		if (event instanceof Number) {
+			className = className.toLowerCase();
+		} else {
+			switch (className) {
+			case "byte[]":
+				event = convertByteArray((byte[]) event);
+				className = "bytestream";
+				break;
+			case "URL":
+				className = "url";
+				event=event.toString();
+				break;
+			case "Boolean":
+				className = "boolean";
+			case "String":
+				className = "string";
+				break;
+			case "JsonObject":
+				className = "json";
+				break;
+			default:
+				event = "unknown";
+
+			}
 		}
 
 		String payload = service + ":" + name + ":" + className;
 
-		client.publishEvent(payload, event, 0);
+		client.publishEvent(payload, event, 1);
 
 	}
 
@@ -107,7 +119,7 @@ public class Controller implements CommandCallback,Runnable {
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
-			
+
 				e.printStackTrace();
 			}
 		}
@@ -128,63 +140,80 @@ public class Controller implements CommandCallback,Runnable {
 	}
 
 	public void start() {
-		
-		 
-		Thread t=new Thread(this);
-		t.setDaemon(true);
+
+		LOG.info("controller thread starting");
+		Thread t = new Thread(this);
+		t.setDaemon(false);
 		t.start();
-		
+
 	}
 
 	@Override
 	public void run() {
-		
-		
+
+		LOG.info("Client = " + client);
 		client.setKeepAliveInterval(120);
 		client.setCommandCallback(this);
 
 		try {
 			client.connect();
+			LOG.info("Client = " + client);
 		} catch (MqttException e1) {
-			
+			LOG.error(e1.getMessage());
 			e1.printStackTrace();
 			return;
 		}
+
 		waitForConnect();
-		
-		for(Thread t:services) {
+
+		for (Thread t : services) {
 			t.start();
 		}
-		
-		
- while(true) {
-			 
-			 Command cmd = null;
-             try {
-                     cmd = queue.take();
-                     handleCommand(cmd);
-             } catch (InterruptedException e) {}
-			
-		 }
-		
+
+		while (true) {
+
+			Command cmd = null;
+			try {
+				cmd = queue.take();
+				handleCommand(cmd);
+			} catch (InterruptedException e) {
+			}
+
+		}
+
 	}
 
 	private void handleCommand(Command cmd) {
-		
-		String payload=cmd.getPayload();
+
+		String payload = cmd.getPayload();
 		JsonObject object = new JsonParser().parse(payload).getAsJsonObject();
-		
+
 		String command = object.get("cmd").getAsString();
+
+		LOG.info("command " + command + " received");
+		ActiveSensor target = commands.get(command);
+		if (target != null) {
+			target.handleCommand(command, object);
+		} else {
+			LOG.info("no handlers found for " + command);
+		}
+
+	}
+
+	public File getRoot() {
+		return root;
+	}
+
+	public URL getURL(File file) {
+		;
 		
-		LOG.info("command "+command+" received");
-		ActiveSensor target=commands.get(command);
-		if(target!=null) {
-			target.handleCommand(command,object);
+		try {
+			return new URL("http://"+InetAddress.getLocalHost().getHostAddress()+":"+port+"/"+file.getPath());
+		} catch (MalformedURLException | UnknownHostException e) {
+		
+			e.printStackTrace();
 		}
-		else {
-			LOG.info("no handlers found for "+command);
-		}
- 		
+		return null;
 	}
 
 }

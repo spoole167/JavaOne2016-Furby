@@ -4,6 +4,10 @@ apply plugin: 'application'
 
 repositories {
     jcenter()
+    
+     flatDir {
+       dirs '/usr/local/share/OpenCV/java'
+   }
 }
 
 mainClassName = "com.ibm.javaone2016.demo.furby.Main"
@@ -14,6 +18,8 @@ task execute(type:JavaExec) {
 }
 
 dependencies {
+	compile "com.sparkjava:spark-core:2.5" 
+ 	compile name: 'opencv-310'
     compile 'org.slf4j:slf4j-api:1.7.21'
     compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.6'
     compile 'com.ibm.watson.developer_cloud:java-sdk:2.10.0'
@@ -21,5 +27,7 @@ dependencies {
     compile group: 'org.eclipse.paho',  name: 'org.eclipse.paho.client.mqttv3', version: '1.1.0'
 	compile 'com.github.sarxos:webcam-capture:0.3.10'
 	compile 'com.ibm.watson.developer_cloud:java-sdk:2.10.0'
+	compile group: 'commons-io', name: 'commons-io', version: '2.5'
+	
 	
 }

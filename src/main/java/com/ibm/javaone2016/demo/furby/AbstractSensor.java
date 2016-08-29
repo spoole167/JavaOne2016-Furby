@@ -1,5 +1,8 @@
 package com.ibm.javaone2016.demo.furby;
 
+import java.io.File;
+import java.net.URL;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,9 +11,21 @@ public abstract class AbstractSensor implements Sensor{
 	protected static final Logger LOG = LoggerFactory.getLogger(Sensor.class);
 	private boolean keepAlive = true;
 	
+	
 	private Controller controller;
 	
-
+	protected File newFile(String name) {
+		File root=controller.getRoot();
+		File mine=new File(root,this.getClass().getName());
+		mine.mkdirs();
+		return new File(mine,name);
+	}
+	protected URL newURL(String name) {
+		
+		File mine=new File(this.getClass().getName());
+		return controller.getURL(new File(mine,name));
+		
+	}
 	protected boolean isAlive() {
 		return keepAlive;
 	}

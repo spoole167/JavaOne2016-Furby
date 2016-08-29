@@ -1,7 +1,12 @@
 package com.ibm.javaone2016.demo.furby;
 
+import static spark.Spark.get;
+import static spark.Spark.port;
+import static spark.Spark.staticFiles;
+
 import java.io.File;
 import java.io.FileReader;
+import java.net.InetAddress;
 import java.util.Map;
 import java.util.Properties;
 
@@ -19,6 +24,13 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 
+		
+		File root=new File("/tmp/furby");
+		root.mkdirs();
+		staticFiles.externalLocation(root.getAbsolutePath());
+		
+		
+		
 		// find config file
 		File configFile =new File(System.getProperty("user.home") + "/.furby.json");
 		
@@ -29,13 +41,27 @@ public class Main {
 		// create json version
 		JsonObject config = new JsonParser().parse(new FileReader(configFile)).getAsJsonObject();
 
+		// Web config
+		int port=4567;
+		
+		JsonElement webElement=config.get("web");
+		if(webElement!=null) {
+			JsonObject web=webElement.getAsJsonObject();
+			port=web.get("port").getAsInt();
+			port(port);
+		}
+		 
+		get("/", (req, res) -> "Hello World");
+		
+		
+		
 		// load IOT device
 
 		DeviceClient client = getIOTClient(config);
 		
 		// create controller
 
-		Controller controller = new Controller(client);
+		Controller controller = new Controller(root,port,client);
 
 		
 		// add sensors
@@ -70,6 +96,8 @@ public class Main {
 
 		}
 
+		
+		
 		// start controller..
 		controller.start();
 		
@@ -113,7 +141,7 @@ public class Main {
 		}
 		
 		DeviceClient c = new DeviceClient(options);
-		
+		c.setKeepAliveInterval(120);
 		
 		
 		return c;
