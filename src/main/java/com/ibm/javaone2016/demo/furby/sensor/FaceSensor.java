@@ -68,9 +68,17 @@ public class FaceSensor extends AbstractActiveSensor {
 				System.load(t.getAsString());
 			}
 		});
-	
-		 camera = new VideoCapture(0);
+		
+		int device=0;
+		
+		JsonElement deviceElement=serviceConfig.get("device");
+		if(deviceElement!=null) {
+			device=deviceElement.getAsInt();
+		}
+		
+		 camera = new VideoCapture(device);
 		 
+		 LOG.info("camera is "+camera);
 		 cc=new CascadeClassifier("/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");	
 	}
 

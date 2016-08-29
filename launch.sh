@@ -5,9 +5,9 @@ export SERIAL
 
 while : ; do
     echo "launcher starting $SERIAL"
-	#git pull
+	git pull
 
-	gradle execute 
+	gradle execute --no-daemon
 		
 	if [[ $? -ne 50 ]]; then
 		break;
