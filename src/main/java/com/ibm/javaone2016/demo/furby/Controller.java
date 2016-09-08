@@ -32,14 +32,16 @@ public class Controller implements CommandCallback, Runnable {
 	private File root;
 	private List<Thread> services = new LinkedList<>();
 	private Map<String, ActiveSensor> commands = new HashMap<>();
-
+	private JsonObject metadata;
+	
 	private BlockingQueue<Command> queue = new LinkedBlockingQueue<Command>();
 
-	public Controller(File root,int port,DeviceClient client) {
+	public Controller(JsonObject metadata,DeviceClient client) {
 
+		this.metadata=metadata;
 		this.client = client;
-		this.root=root;
-		this.port=port;
+		this.root=new File(metadata.get("root").getAsString());
+		
 	}
 
 	public void addService(Sensor service) {
@@ -78,36 +80,47 @@ public class Controller implements CommandCallback, Runnable {
 		if (!client.isConnected()) {
 			waitForConnect();
 		}
-
+		
+		if(!(event instanceof JsonObject))  {
+		
+			JsonObject o=new JsonObject();
+			
 		String className = event.getClass().getSimpleName();
 
 		if (event instanceof Number) {
-			className = className.toLowerCase();
+			o.addProperty("v",(Number)event); 
+			o.addProperty("type","number");
+			
 		} else {
 			switch (className) {
 			case "byte[]":
-				event = convertByteArray((byte[]) event);
-				className = "bytestream";
+				o.addProperty("v",convertByteArray((byte[]) event));
+				o.addProperty("type","bytestream");
 				break;
 			case "URL":
-				className = "url";
-				event=event.toString();
+				o.addProperty("v",event.toString());
+				o.addProperty("type","url");
 				break;
 			case "Boolean":
-				className = "boolean";
+				o.addProperty("v",event.toString());
+				o.addProperty("type","boolean");
+				break;
 			case "String":
-				className = "string";
+				o.addProperty("v",event.toString());
+				o.addProperty("type","string");
 				break;
-			case "JsonObject":
-				className = "json";
-				break;
+			
 			default:
-				event = "unknown";
-
+				o.addProperty("v",event.toString());
+				o.addProperty("type","unknown");
 			}
+			
+			event=o;
 		}
-
-		String payload = service + ":" + name + ":" + className;
+		
+		}
+		
+		String payload = service+":"+name;
 
 		client.publishEvent(payload, event, 1);
 
@@ -214,6 +227,10 @@ public class Controller implements CommandCallback, Runnable {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public JsonObject getMetadata() {
+		return metadata;
 	}
 
 }

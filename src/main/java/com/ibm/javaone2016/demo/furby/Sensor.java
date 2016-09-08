@@ -11,4 +11,6 @@ public interface Sensor {
 	void start();
 	 
 	void close(); 
+	
+	JsonObject getMetadata();
 }

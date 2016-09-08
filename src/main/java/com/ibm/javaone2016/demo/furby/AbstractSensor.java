@@ -6,6 +6,8 @@ import java.net.URL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonObject;
+
 public abstract class AbstractSensor implements Sensor{
 
 	protected static final Logger LOG = LoggerFactory.getLogger(Sensor.class);
@@ -57,7 +59,10 @@ public void setController(Controller controller) {
 }
 
 
-
+public JsonObject getMetadata() {
+	if(controller==null) throw new IllegalArgumentException("missing controller");
+	return controller.getMetadata();
+}
 
 public void close() {
 	keepAlive=false;

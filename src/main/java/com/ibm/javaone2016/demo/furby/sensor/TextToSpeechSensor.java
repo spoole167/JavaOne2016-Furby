@@ -64,12 +64,40 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		if (e == null)
 			return;
 		String text = e.getAsString();
-		LOG.info("saying "+text);
+		
+		String words[]=toWords(text);
+		File[] audios=new File[words.length];
+		
+		for(int i=0;i<words.length;i++) {
+			
+			File cached=new File("/tmp/"+words[i]+".wav");
+			if(!cached.exists()) {
+				cached=translateWord(words[i]);
+				
+			}
+			audios[i]=cached;
+		}
+	
+		for(File f:audios) {
+		// say all words
+		Process p=Runtime.getRuntime().exec("aplay "+f.getAbsolutePath());
+		try {
+			p.waitFor();
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		}
+		
+	}
+
+	private File translateWord(String text) throws IOException {
+LOG.info("saying "+text);
 		
 		InputStream stream = service.synthesize(text, Voice.EN_ALLISON, "audio/wav");
 
 		InputStream in = WaveUtils.reWriteWaveHeader(stream);
-		File outFile=new File("/tmp/say.wav");
+		File outFile=new File("/tmp/"+text+".wav");
 		OutputStream out = new FileOutputStream(outFile);
 		byte[] buffer = new byte[1024];
 		int length;
@@ -80,14 +108,23 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		in.close();
 		stream.close();
 		
+		
 		LOG.info("translation completed");
 		
-		AudioInputStream audioIn = AudioSystem.getAudioInputStream(outFile);
-		Clip clip = AudioSystem.getClip();
-		clip.open(audioIn);
-		clip.start();
-	
-		   
+		return outFile;
+	}
+
+	private String[] toWords(String text) {
+		char[] letters =text.toCharArray();
+		for(int i=0;i<letters.length;i++) {
+			if(!Character.isLetterOrDigit(letters[i])) {
+				letters[i]=' ';
+			}
+			
+		}
+		String s=new String(letters).toLowerCase().trim();
+		return s.split(" ");
+		
 	}
 
 	@Override

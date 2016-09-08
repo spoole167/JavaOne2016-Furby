@@ -6,7 +6,6 @@ import static spark.Spark.staticFiles;
 
 import java.io.File;
 import java.io.FileReader;
-import java.net.InetAddress;
 import java.util.Map;
 import java.util.Properties;
 
@@ -25,11 +24,6 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 
 		
-		File root=new File("/tmp/furby");
-		root.mkdirs();
-		staticFiles.externalLocation(root.getAbsolutePath());
-		
-		
 		
 		// find config file
 		File configFile =new File(System.getProperty("user.home") + "/.furby.json");
@@ -41,18 +35,33 @@ public class Main {
 		// create json version
 		JsonObject config = new JsonParser().parse(new FileReader(configFile)).getAsJsonObject();
 
-		// Web config
-		int port=4567;
+	
 		
-		JsonElement webElement=config.get("web");
-		if(webElement!=null) {
-			JsonObject web=webElement.getAsJsonObject();
-			port=web.get("port").getAsInt();
-			port(port);
+		// set missing values...
+		JsonObject meta;
+		
+		JsonElement configElement=config.get("config");
+		if(configElement!=null) {
+			meta=configElement.getAsJsonObject();
+		
 		}
-		 
-		get("/", (req, res) -> "Hello World");
+		else {
+			meta=new JsonObject();
 		
+		}
+		
+		// add defaults.
+	
+		if(!meta.has("webport")) meta.addProperty("webport",8080);
+		if(!meta.has("root")) meta.addProperty("root","/tmp/furby");
+		
+		
+		// configure system
+		
+		File root=new File(meta.get("root").getAsString());
+		root.mkdirs();
+		
+		configWebServer(meta);
 		
 		
 		// load IOT device
@@ -61,7 +70,7 @@ public class Main {
 		
 		// create controller
 
-		Controller controller = new Controller(root,port,client);
+		Controller controller = new Controller(meta,client);
 
 		
 		// add sensors
@@ -90,8 +99,8 @@ public class Main {
 			Sensor service = loadService(sensorClass);
 			if (service != null) {
 				System.out.println("registering "+sensorClass);
-				service.configure(m.getValue().getAsJsonObject());
 				controller.addService(service);
+				service.configure(m.getValue().getAsJsonObject());
 			}
 
 		}
@@ -100,6 +109,17 @@ public class Main {
 		
 		// start controller..
 		controller.start();
+		
+	}
+
+	private static void configWebServer(JsonObject meta) {
+		
+		File root=new File(meta.get("root").getAsString());
+		staticFiles.externalLocation(root.getAbsolutePath());
+		
+		port(meta.get("webport").getAsInt());
+		
+		get("/", (req, res) -> "Hello World");
 		
 	}
 

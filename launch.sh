@@ -1,5 +1,5 @@
 #!/bin/bash
-
+export PATH=/home/pi/.sdkman/candidates/gradle/current/bin:$PATH
 SERIAL=`cat /proc/cpuinfo | grep Serial | cut -d ':' -f 2`
 export SERIAL
 

@@ -28,6 +28,7 @@ dependencies {
 	compile 'com.github.sarxos:webcam-capture:0.3.10'
 	compile 'com.ibm.watson.developer_cloud:java-sdk:2.10.0'
 	compile group: 'commons-io', name: 'commons-io', version: '2.5'
-	
+	compile group: 'com.cloudant', name: 'cloudant-client', version: '2.5.1'
+    compile group: 'com.squareup.okhttp', name: 'okhttp-urlconnection', version: '2.7.5'
 	
 }
