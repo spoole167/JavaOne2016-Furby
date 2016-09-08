@@ -65,33 +65,17 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			return;
 		String text = e.getAsString();
 		
-		String words[]=toWords(text);
-		for(String w:words) {
-			LOG.info("word:["+w+"]");
-		}
-		
-		File[] audios=new File[words.length];
-		
-		for(int i=0;i<words.length;i++) {
-			
-			File cached=new File("/tmp/"+words[i]+".wav");
-			if(!cached.exists()) {
-				cached=translateWord(words[i]);
-				
-			}
-			audios[i]=cached;
-		}
-	
-		for(File f:audios) {
-		// say all words
-		Process p=Runtime.getRuntime().exec("aplay "+f.getAbsolutePath());
+		String words=toWords(text);
+		File file=translateWord(words);
+			// say all words
+		Process p=Runtime.getRuntime().exec("aplay "+file.getAbsolutePath());
 		try {
 			p.waitFor();
 		} catch (InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		}
+		
 		
 	}
 
@@ -101,9 +85,9 @@ LOG.info("saying "+text);
 		InputStream stream = service.synthesize(text, Voice.EN_ALLISON, "audio/wav");
 
 		InputStream in = WaveUtils.reWriteWaveHeader(stream);
-		File outFile=new File("/tmp/"+text+".wav");
+		File outFile=new File("/tmp/say.wav");
 		OutputStream out = new FileOutputStream(outFile);
-		byte[] buffer = new byte[1024];
+		byte[] buffer = new byte[250000];
 		int length;
 		while ((length = in.read(buffer)) > 0) {
 			out.write(buffer, 0, length);
@@ -118,28 +102,17 @@ LOG.info("saying "+text);
 		return outFile;
 	}
 
-	private String[] toWords(String text) {
-		String word=null;
-		List<String> wordList=new LinkedList<>();
+	private String toWords(String text) {
 		
 		char[] letters =text.toCharArray();
 		for(int i=0;i<letters.length;i++) {
-			if(Character.isLetterOrDigit(letters[i])) {
-				if(word==null) word=""+letters[i];
-				else word+=letters[i];
-			}
-			else {
-				if(word!=null) {
-					wordList.add(word.toLowerCase());
-					word=null;
-				}
+			if(!Character.isLetterOrDigit(letters[i])) {
+				letters[i]=' ';
 			}
 			
 		}
 		
-		if(word!=null) wordList.add(word.toLowerCase());
-		
-		return wordList.toArray(new String[0]);
+		return new String(letters);
 	}
 
 	@Override
