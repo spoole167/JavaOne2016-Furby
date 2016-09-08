@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -117,21 +119,26 @@ LOG.info("saying "+text);
 	}
 
 	private String[] toWords(String text) {
+		String word=null;
+		List<String> wordList=new LinkedList<>();
+		
 		char[] letters =text.toCharArray();
 		for(int i=0;i<letters.length;i++) {
-			if(!Character.isLetterOrDigit(letters[i])) {
-				letters[i]=' ';
+			if(Character.isLetterOrDigit(letters[i])) {
+				if(word==null) word=""+letters[i];
+				else word+=letters[i];
+			}
+			else {
+				if(word!=null) {
+					wordList.add(word.toLowerCase());
+					word=null;
+				}
 			}
 			
 		}
-		String s=new String(letters).toLowerCase().trim();
-		String[] words= s.split(" ");
-		ArrayList<String> wordList=new ArrayList<>();
-		for(String w:words) {
-			if(w!=null && w.trim()!="") {
-				wordList.add(w.trim());
-			}
-		}
+		
+		if(word!=null) wordList.add(word.toLowerCase());
+		
 		return wordList.toArray(new String[0]);
 	}
 
