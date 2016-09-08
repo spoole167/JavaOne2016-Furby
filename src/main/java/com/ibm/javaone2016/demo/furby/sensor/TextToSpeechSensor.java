@@ -5,10 +5,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
@@ -66,6 +64,10 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		String text = e.getAsString();
 		
 		String words[]=toWords(text);
+		for(String w:words) {
+			LOG.info("word:["+w+"]");
+		}
+		
 		File[] audios=new File[words.length];
 		
 		for(int i=0;i<words.length;i++) {
@@ -123,8 +125,14 @@ LOG.info("saying "+text);
 			
 		}
 		String s=new String(letters).toLowerCase().trim();
-		return s.split(" ");
-		
+		String[] words= s.split(" ");
+		ArrayList<String> wordList=new ArrayList<>();
+		for(String w:words) {
+			if(w!=null && w.trim()!="") {
+				wordList.add(w.trim());
+			}
+		}
+		return wordList.toArray(new String[0]);
 	}
 
 	@Override
