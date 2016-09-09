@@ -1,23 +1,29 @@
 package com.ibm.javaone2016.demo.furby.sensor;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.net.Proxy;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.ibm.javaone2016.demo.furby.AbstractActiveSensor;
+import com.ibm.watson.developer_cloud.service.WatsonService;
 import com.ibm.watson.developer_cloud.text_to_speech.v1.TextToSpeech;
-import com.ibm.watson.developer_cloud.text_to_speech.v1.model.Voice;
 import com.ibm.watson.developer_cloud.text_to_speech.v1.util.WaveUtils;
+import com.squareup.okhttp.Authenticator;
+import com.squareup.okhttp.Credentials;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
 
 /*
  * Output sensor for converting a command into speech 
@@ -26,6 +32,8 @@ import com.ibm.watson.developer_cloud.text_to_speech.v1.util.WaveUtils;
  */
 public class TextToSpeechSensor extends AbstractActiveSensor {
 	private TextToSpeech service;
+	private String userid;
+	private String password;
 
 	@Override
 	public void start() {
@@ -49,11 +57,11 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 	public void handleCommand(String command, JsonObject object) {
 
 		if (command.equals("say")) {
-			
+
 			try {
 				say(object);
 			} catch (IOException | UnsupportedAudioFileException | LineUnavailableException e) {
-			
+
 				e.printStackTrace();
 			}
 		}
@@ -64,55 +72,62 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		if (e == null)
 			return;
 		String text = e.getAsString();
-		
-		String words=toWords(text);
-		File file=translateWord(words);
-			// say all words
-		Process p=Runtime.getRuntime().exec("aplay "+file.getAbsolutePath());
-		try {
-			p.waitFor();
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		
-	}
+		byte[] sound = getAudioTranslation(text);
+		ByteArrayInputStream bin = new ByteArrayInputStream(sound);
+		AudioInputStream audioInputStream = null;
+		InputStream wav = WaveUtils.reWriteWaveHeader(bin);
+		audioInputStream = AudioSystem.getAudioInputStream(wav);
+		AudioFormat audioFormat = audioInputStream.getFormat();
+		SourceDataLine line = null;
+		DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat);
+		line = (SourceDataLine) AudioSystem.getLine(info);
+		line.open(audioFormat);
+		line.start();
 
-	private File translateWord(String text) throws IOException {
-LOG.info("saying "+text);
-		
-		InputStream stream = service.synthesize(text, Voice.EN_ALLISON, "audio/wav");
-
-		InputStream in = WaveUtils.reWriteWaveHeader(stream);
-		File outFile=new File("/tmp/say.wav");
-		OutputStream out = new FileOutputStream(outFile);
-		byte[] buffer = new byte[250000];
-		int length;
-		while ((length = in.read(buffer)) > 0) {
-			out.write(buffer, 0, length);
-		}
-		out.close();
-		in.close();
-		stream.close();
-		
-		
-		LOG.info("translation completed");
-		
-		return outFile;
-	}
-
-	private String toWords(String text) {
-		
-		char[] letters =text.toCharArray();
-		for(int i=0;i<letters.length;i++) {
-			if(!Character.isLetterOrDigit(letters[i])) {
-				letters[i]=' ';
+		int nBytesRead = 0;
+		byte[] abData = new byte[250000];
+		while (nBytesRead != -1) {
+			try {
+				nBytesRead = audioInputStream.read(abData, 0, abData.length);
+			} catch (IOException e1) {
+				e1.printStackTrace();
 			}
-			
+			if (nBytesRead >= 0) {
+				int nBytesWritten = line.write(abData, 0, nBytesRead);
+			}
 		}
-		
-		return new String(letters);
+
+		line.drain();
+		line.close();
+
+	}
+
+	private byte[] getAudioTranslation(String text) throws IOException {
+
+		OkHttpClient client = new OkHttpClient();
+		client.setAuthenticator(new Authenticator() {
+
+			@Override
+			public Request authenticate(Proxy proxy, Response response) throws IOException {
+				String credential = Credentials.basic(userid, password);
+				return response.request().newBuilder().header("Authorization", credential).build();
+			}
+
+			@Override
+			public Request authenticateProxy(Proxy proxy, Response response) throws IOException {
+				return null;
+			}
+		});
+		Request request = new Request.Builder()
+
+				.url("https://stream.watsonplatform.net/text-to-speech/api/v1/synthesize?accept=audio/wav&text=" + text
+						+ "&voice=en-US_AllisonVoice")
+				.build();
+		Response response = client.newCall(request).execute();
+		byte[] sound = response.body().bytes();
+		LOG.info("got {} bytes", sound.length);
+		return sound;
+
 	}
 
 	@Override
@@ -121,6 +136,8 @@ LOG.info("saying "+text);
 		service.setUsernameAndPassword(serviceConfig.get("username").getAsString(),
 				serviceConfig.get("password").getAsString());
 
+		userid = serviceConfig.get("username").getAsString();
+		password = serviceConfig.get("password").getAsString();
 	}
 
 }
