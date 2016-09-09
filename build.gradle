@@ -30,5 +30,6 @@ dependencies {
 	compile group: 'commons-io', name: 'commons-io', version: '2.5'
 	compile group: 'com.cloudant', name: 'cloudant-client', version: '2.5.1'
     compile group: 'com.squareup.okhttp', name: 'okhttp-urlconnection', version: '2.7.5'
+	compile group: 'org.apache.commons', name: 'commons-exec', version: '1.3'
 	
 }
