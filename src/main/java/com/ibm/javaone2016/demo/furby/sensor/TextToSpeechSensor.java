@@ -6,7 +6,6 @@ import java.net.URLEncoder;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteWatchdog;
 
 import com.google.gson.JsonElement;
@@ -21,7 +20,8 @@ import com.ibm.javaone2016.demo.furby.AbstractActiveSensor;
 public class TextToSpeechSensor extends AbstractActiveSensor {
 	private String userid;
 	private String password;
-
+	private FurbyMotionController furby=new FurbyMotionController();
+	
 	@Override
 	public void start() {
 
@@ -63,12 +63,11 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 	}
 
 	private void wake(JsonObject object) {
-		// TODO Auto-generated method stub
-		
+		furby.wake();
 	}
 
 	private void sleep(JsonObject object) {
-		// TODO Auto-generated method stub
+		furby.sleep();
 		
 	}
 
