@@ -105,6 +105,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		Object[] data=getAudioTranslationWithMarks(text);
 		File sound=(File) data[0];
 		float[] marks=(float[]) data[1];
+		final float audio_length=(float) data[2];
 		
 		CommandLine playCommandLine = CommandLine.parse("play -q " + sound.getAbsolutePath());
 		DefaultExecutor musicExecutor = new DefaultExecutor();
@@ -124,7 +125,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 					
 					furby.wake();
 					
-					actions.add(furby.new Talk(6));
+					actions.add(furby.new Talk((int)audio_length));
 					//for(float f:marks) {
 					//	actions.add(furby.new OpenMouthAction((long) (f*1000.0)));
 					//	actions.add(furby.new PauseAction(1000));
@@ -265,6 +266,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			 
 		// turn marks into file
 			 float[] ms=new float[marks.size()];
+			 float audio_length=marks.get(marks.size()-1);
 			 float start=0;
 			 int i=0;
 			 for(Float f:marks) {
@@ -273,7 +275,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 				 i++;
 			 }
 			 
-		 return new Object[]{result,ms};
+		 return new Object[]{result,ms,audio_length};
 	}
 	
 	
