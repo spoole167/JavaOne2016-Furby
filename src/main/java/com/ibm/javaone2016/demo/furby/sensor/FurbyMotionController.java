@@ -286,6 +286,7 @@ public class FurbyMotionController {
 				}
 			}
 			
+			setOff();
 		}
 	
 		
