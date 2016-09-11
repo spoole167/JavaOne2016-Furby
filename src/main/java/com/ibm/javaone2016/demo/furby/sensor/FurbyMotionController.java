@@ -1,7 +1,7 @@
 package com.ibm.javaone2016.demo.furby.sensor;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
@@ -21,7 +21,7 @@ public class FurbyMotionController {
 	final GpioPinDigitalOutput dir;
 	int counter=-1;
 	boolean atHome=false;
-	List<Action> actions=new LinkedList<>();
+	BlockingQueue<Action> actions = new ArrayBlockingQueue<>(1024);
 	
 	public FurbyMotionController() {
 		gpio = GpioFactory.getInstance();
@@ -42,6 +42,7 @@ public class FurbyMotionController {
 		pin.setShutdownOptions(true, PinState.LOW);
 		dir.setShutdownOptions(true, PinState.LOW);
 
+		drive();
 	}
 
 	private void setup() {
@@ -63,7 +64,7 @@ public class FurbyMotionController {
 	public void sleep() {
 		setup();
 		moveTo(100);
-		drive();
+		
 	}
 
 	private void drive() {
@@ -71,9 +72,16 @@ public class FurbyMotionController {
 			
 			@Override
 			public void run() {
-				while(!actions.isEmpty()) {
-					Action a=actions.remove(0);
-					a.execute();
+				while(true) {
+					Action a;
+					try {
+						a = actions.take();
+						a.execute();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
 				}
 				
 			}
@@ -94,6 +102,8 @@ public class FurbyMotionController {
 		
 	}
 
+	
+
 	public void wake() {
 		setup();
 		moveTo(200);
@@ -106,4 +116,35 @@ public class FurbyMotionController {
 		
 	}
 
+	public class PauseAction implements Action {
+		private long time;
+		public PauseAction(long milliseconds) {
+			this.time=milliseconds;
+		}
+		@Override
+		public void execute() {
+			pin.low();
+			try {
+				Thread.sleep(time);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+	}
+	public class OpenMouthAction implements Action {
+
+		private long time;
+		
+		public OpenMouthAction(long milliseconds) {
+			this.time=milliseconds;
+		}
+		@Override
+		public void execute() {
+			pin.pulse(time, true);
+			
+		}
+		
+	}
 }

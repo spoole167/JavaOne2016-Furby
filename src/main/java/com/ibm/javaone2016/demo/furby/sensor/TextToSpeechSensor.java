@@ -3,10 +3,9 @@ package com.ibm.javaone2016.demo.furby.sensor;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +20,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ibm.javaone2016.demo.furby.AbstractActiveSensor;
+import com.ibm.javaone2016.demo.furby.sensor.FurbyMotionController.Action;
+import com.ibm.javaone2016.demo.furby.sensor.FurbyMotionController.OpenMouthAction;
+import com.ibm.javaone2016.demo.furby.sensor.FurbyMotionController.PauseAction;
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketException;
@@ -41,7 +43,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 	private String password;
 	
 	WebSocketFactory factory = new WebSocketFactory();
-	//private FurbyMotionController furby=new FurbyMotionController();
+	private FurbyMotionController furby=new FurbyMotionController();
 	
 	@Override
 	public void start() {
@@ -75,6 +77,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 				sleep(object);
 				break;
 			}
+			
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -84,11 +87,11 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 	}
 
 	private void wake(JsonObject object) {
-	//	furby.wake();
+	furby.wake();
 	}
 
 	private void sleep(JsonObject object) {
-		//furby.sleep();
+		furby.sleep();
 		
 	}
 
@@ -114,27 +117,26 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			@Override
 			public void run() {
 				try {
-					// kick off music.
+					// set up furby
+					List<Action> actions=new LinkedList<>();
 					
-					musicExecutor.execute(playCommandLine,resultHandler);
+					furby.wake();
 					
 					for(float f:marks) {
-						// pause for time
-						System.out.println("opened for "+f+" ("+(long)(f*1000));
-						Thread.sleep((long) f*1000);
-						System.out.println("closed");
+						actions.add(furby.new OpenMouthAction((long) f*1000));
+						actions.add(furby.new PauseAction(1000));
 					}
+					
+					// kick off music.
+					musicExecutor.execute(playCommandLine,resultHandler);
+			
 				} catch (ExecuteException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
-						
 			}
 		});
 		
