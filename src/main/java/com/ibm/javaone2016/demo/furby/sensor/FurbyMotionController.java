@@ -25,21 +25,22 @@ public class FurbyMotionController {
 	
 	public FurbyMotionController() {
 		gpio = GpioFactory.getInstance();
-		home = gpio.provisionDigitalInputPin(RaspiPin.GPIO_04, PinPullResistance.PULL_DOWN);
+		home = gpio.provisionDigitalInputPin(RaspiPin.GPIO_07, PinPullResistance.PULL_DOWN);
 		home.setShutdownOptions(true);
 		home.addListener(new GpioPinListenerDigital() {
 			@Override
 			public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
-				if(event.getState()==PinState.HIGH) atHome=true;
+			    System.out.println(" --> GPIO PIN STATE CHANGE: " + event.getPin() + " = " + event.getState());
+		       if(event.getState()==PinState.HIGH) atHome=true;
 			}
 
 		});
 
 		pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00, "MyLED", PinState.LOW);
-		dir = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02, "MyLED", PinState.HIGH);
+		dir = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02, "MyLED", PinState.LOW);
 		// set shutdown state for this pin
 		pin.setShutdownOptions(true, PinState.LOW);
-		dir.setShutdownOptions(true, PinState.HIGH);
+		dir.setShutdownOptions(true, PinState.LOW);
 
 	}
 
@@ -66,10 +67,19 @@ public class FurbyMotionController {
 	}
 
 	private void drive() {
-		while(!actions.isEmpty()) {
-			Action a=actions.remove(0);
-			a.execute();
-		}
+		Thread r=new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				while(!actions.isEmpty()) {
+					Action a=actions.remove(0);
+					a.execute();
+				}
+				
+			}
+		});
+		r.start();
+		
 		
 	}
 
@@ -81,12 +91,13 @@ public class FurbyMotionController {
 				pin.pulse(i, true);
 				
 			}});
-		drive();
+		
 	}
 
 	public void wake() {
 		setup();
 		moveTo(200);
+		drive();
 	}
 	
 	public static interface Action {
