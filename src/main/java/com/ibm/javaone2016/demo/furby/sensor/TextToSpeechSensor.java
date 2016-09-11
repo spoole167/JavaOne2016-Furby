@@ -287,8 +287,10 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			 fos.close();
 			 
 		// turn marks into file
+			 float audio_length=0;
 			 float[] ms=new float[marks.size()];
-			 float audio_length=marks.get(marks.size()-1);
+			 if(marks.size()>0) {
+			audio_length=marks.get(marks.size()-1);
 			 float start=0;
 			 int i=0;
 			 for(Float f:marks) {
@@ -296,7 +298,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 				 start=f;
 				 i++;
 			 }
-			 
+			 }
 		 return new Object[]{result,ms,audio_length};
 	}
 	
