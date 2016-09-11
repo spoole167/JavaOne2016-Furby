@@ -127,6 +127,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 						actions.add(furby.new PauseAction(1000));
 					}
 					
+					furby.run(actions);
 					// kick off music.
 					musicExecutor.execute(playCommandLine,resultHandler);
 			

@@ -1,5 +1,6 @@
 package com.ibm.javaone2016.demo.furby.sensor;
 
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -76,6 +77,7 @@ public class FurbyMotionController {
 					Action a;
 					try {
 						a = actions.take();
+						System.out.println(a.getClass().getName());
 						a.execute();
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
@@ -142,9 +144,14 @@ public class FurbyMotionController {
 		}
 		@Override
 		public void execute() {
+			System.out.println("mouth for "+time);
 			pin.pulse(time, true);
 			
 		}
+		
+	}
+	public void run(List<Action> incoming) {
+		actions.addAll(incoming);
 		
 	}
 }
