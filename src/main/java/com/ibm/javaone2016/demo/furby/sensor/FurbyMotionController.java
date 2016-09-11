@@ -217,7 +217,6 @@ public class FurbyMotionController {
 		goHome();
 		
 		setForwards();
-		pause(800);
 		moveTo(200);
 		pause(100);
 		moveTo(200);
@@ -255,6 +254,44 @@ public class FurbyMotionController {
 		
 	}
 
+	
+	public class Chat implements Action {
+
+		private char[] chat;
+		public Chat(String chat) {
+			this.chat=chat.toCharArray();
+		}
+		
+		@Override
+		public void execute() {
+			
+			for(char c:chat) {
+				switch(c) {
+					
+				case 'h' :
+					goHome();
+					break;
+				case 'f' :
+					setForwards();
+					pause(100);
+					break;
+				case 'b' :
+					setBackwards();
+					pause(100);
+					break;
+				case 'p' :
+					pause(100);
+					break;
+					
+				}
+			}
+			
+		}
+	
+		
+		
+	}
+	
 	public class Talk implements Action {
 
 		private int turns=0;

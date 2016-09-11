@@ -75,6 +75,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 				wake(object);
 				say(object);
 				break;
+			
 			case "sleep":
 				sleep(object);
 				break;
@@ -120,8 +121,18 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			@Override
 			public void run() {
 				try {
-					// set up furby
+					
 					List<Action> actions=new LinkedList<>();
+					
+					if(object.has("chat")) {
+						String chat=object.get("chat").getAsString();
+						actions.add(furby.new Chat(chat));
+					}
+					else {
+						
+					
+					// set up furby
+					
 					
 					furby.wake();
 					
@@ -130,6 +141,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 					//	actions.add(furby.new OpenMouthAction((long) (f*1000.0)));
 					//	actions.add(furby.new PauseAction(1000));
 					//}
+					}
 					
 					furby.run(actions);
 					// kick off music.
