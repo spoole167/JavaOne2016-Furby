@@ -99,11 +99,8 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 	}
 
 	private void say(JsonObject object) throws IOException, IOException {
-		JsonElement e = object.get("text");
-		if (e == null)
-			return;
-		String text = e.getAsString();
-		Object[] data=getAudioTranslationWithMarks(text);
+		
+		Object[] data=getAudioTranslationWithMarks(object);
 		File sound=(File) data[0];
 		float[] marks=(float[]) data[1];
 		final float audio_length=(float) data[2];
@@ -161,7 +158,14 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 
 	}
 
-	private Object[] getAudioTranslationWithMarks(String text) throws IOException {
+	private Object[] getAudioTranslationWithMarks(JsonObject object) throws IOException {
+		
+		JsonElement te = object.get("text");
+		if (te == null)
+			return null;
+		
+		String text = te.getAsString();
+		
 		
 		final List<Float> marks=new ArrayList<>();
 		final List<byte[]> audio=new ArrayList<>();
@@ -177,10 +181,15 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		 String token=client.newCall(request).execute().body().string();
 		 // got token 
 		 LOG.info("got token {}",token);
-		 
+		
+		 final  StringBuilder sb=new StringBuilder();
+		 if(object.has("asis")) {
+				sb.append(text);
+			}
+		 else {
 		 // convert string into marked up sequence 
 		 String[] parts=text.split(" ");
-		final  StringBuilder sb=new StringBuilder();
+		
 		 sb.append("<speak>");
 		 int c=1;
 		 for(String p:parts) {
@@ -191,6 +200,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			 }
 		 }
 		 sb.append("</speak>");
+		 }
 		 
 		 // make call...
 		
