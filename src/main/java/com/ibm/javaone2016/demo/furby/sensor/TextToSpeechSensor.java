@@ -21,8 +21,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ibm.javaone2016.demo.furby.AbstractActiveSensor;
 import com.ibm.javaone2016.demo.furby.sensor.FurbyMotionController.Action;
-import com.ibm.javaone2016.demo.furby.sensor.FurbyMotionController.OpenMouthAction;
-import com.ibm.javaone2016.demo.furby.sensor.FurbyMotionController.PauseAction;
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketException;
@@ -126,10 +124,11 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 					
 					furby.wake();
 					
-					for(float f:marks) {
-						actions.add(furby.new OpenMouthAction((long) (f*1000.0)));
-						actions.add(furby.new PauseAction(1000));
-					}
+					actions.add(furby.new Talk(6));
+					//for(float f:marks) {
+					//	actions.add(furby.new OpenMouthAction((long) (f*1000.0)));
+					//	actions.add(furby.new PauseAction(1000));
+					//}
 					
 					furby.run(actions);
 					// kick off music.

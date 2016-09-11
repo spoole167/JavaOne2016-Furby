@@ -1,5 +1,8 @@
 package com.ibm.javaone2016.demo.furby.sensor;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -18,10 +21,12 @@ public class FurbyMotionController {
 
 	final GpioController gpio;
 	final GpioPinDigitalInput home;
-	final GpioPinDigitalOutput pin;
-	final GpioPinDigitalOutput dir;
+	final GpioPinDigitalOutput forwardPin;
+	final GpioPinDigitalOutput backwardPin;
 	int counter=-1;
 	boolean atHome=false;
+	boolean seeking=false;
+	
 	BlockingQueue<Action> actions = new ArrayBlockingQueue<>(1024);
 	
 	public FurbyMotionController() {
@@ -32,20 +37,53 @@ public class FurbyMotionController {
 			@Override
 			public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
 			    System.out.println(" --> GPIO PIN STATE CHANGE: " + event.getPin() + " = " + event.getState());
-		       if(event.getState()==PinState.HIGH) atHome=true;
+		       if(event.getState()==PinState.HIGH) {
+		    	   atHome=true;
+		    	   if(seeking) {
+		    		   counter=0;
+		    		   seeking=false;
+		    		   setOff();
+		    	   }
+		       }
 			}
 
 		});
 
-		pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00, "MyLED", PinState.LOW);
-		dir = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02, "MyLED", PinState.LOW);
+		forwardPin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00, "MyLED", PinState.LOW);
+		backwardPin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02, "MyLED", PinState.LOW);
 		// set shutdown state for this pin
-		pin.setShutdownOptions(true, PinState.LOW);
-		dir.setShutdownOptions(true, PinState.LOW);
+		forwardPin.setShutdownOptions(true, PinState.LOW);
+		backwardPin.setShutdownOptions(true, PinState.LOW);
 
 		drive();
 	}
 
+	private void pause(long time) {
+		try {
+			counter+=time;
+			Thread.sleep(time);
+			System.out.println(">"+counter);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	private void setForwards() {
+		setOff();
+		forwardPin.high();
+		backwardPin.low();
+	}
+	private void setBackwards() {
+		setOff();
+		forwardPin.low();
+		backwardPin.high();
+	}
+	private void setOff() {
+		forwardPin.low();
+		backwardPin.low();
+	}
+	
+	
 	private void setup() {
 		if(counter<0) {
 			// need to be configured. 
@@ -56,7 +94,9 @@ public class FurbyMotionController {
 				public void execute() {
 					
 					while(!atHome) {
-						pin.pulse(100, true);
+						setForwards();
+						pause(100);
+						
 					}
 					
 				}}); 
@@ -77,7 +117,6 @@ public class FurbyMotionController {
 					Action a;
 					try {
 						a = actions.take();
-						System.out.println(a.getClass().getName());
 						a.execute();
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
@@ -93,13 +132,21 @@ public class FurbyMotionController {
 		
 	}
 
-	private void moveTo(final int i) {
+	private void moveTo(final long i) {
 		actions.add(new Action(){
 
 			@Override
 			public void execute() {
-				pin.pulse(i, true);
-				
+				long l=i;
+				if(l<0) {
+					l=l*-1;
+					setBackwards();
+				}
+				else {
+					setForwards();
+				}
+				pause(l);
+				setOff();
 			}});
 		
 	}
@@ -112,12 +159,120 @@ public class FurbyMotionController {
 		drive();
 	}
 	
+    public static void main(String[] args) {
+
+        FurbyMotionController furby=new FurbyMotionController();
+         BufferedReader br = null;
+
+    
+
+         // Refer to this http://www.mkyong.com/java/how-to-read-input-from-$
+         // for JDK 1.6, please use java.io.Console class to read system inp$
+         br = new BufferedReader(new InputStreamReader(System.in));
+
+         
+         while (true) {
+
+             System.out.print("Enter something : ");
+             try {
+				String input = br.readLine();
+				long then=System.currentTimeMillis();
+				switch(input) {
+				case "q" :
+						System.exit(0);
+						break;
+				case "f" :
+					furby.moveTo(100);
+					break;
+				case "b" :
+					furby.moveTo(-100);
+					break;
+				case "h" :
+					furby.goHome();
+					break;
+			 	case "c" :
+					furby.calibrate();
+					break;
+			 	case "s" :
+					furby.speak();
+					break;
+			 	case "t" :
+			 		
+			 		for(int i=0;i<5;i++){
+					furby.speak();
+			 		}
+			 		
+					break;
+				}
+				long now=System.currentTimeMillis();
+		 		System.out.println("took "+(now-then));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+         }
+     }
+     
+	private void speak() {
+		goHome();
+		
+		setForwards();
+		pause(800);
+		moveTo(200);
+		pause(100);
+		moveTo(200);
+		pause(100);
+		moveTo(-200);
+		pause(100);
+		moveTo(-200);
+		pause(100);
+		moveTo(-200);
+	}
+
+	private void calibrate() {
+		
+		goHome();
+		for(int i=0;i<10;i++) {
+			long start=System.currentTimeMillis();
+			seek();
+			long now=System.currentTimeMillis();
+			long diff=now-start;
+			System.out.println(""+diff);
+		}
+		
+	}
+
+	private void seek() {
+		// drive forwards until at home
+		setForwards();
+		goHome();
+		
+	}
+
 	public static interface Action {
 
 		void execute();
 		
 	}
 
+	public class Talk implements Action {
+
+		private int turns=0;
+		public Talk(int seconds) {
+			turns=seconds;
+			
+		}
+		
+		@Override
+		public void execute() {
+			while(turns>0) {
+				turns--;
+				speak();
+			}
+			
+		}
+		
+	}
 	public class PauseAction implements Action {
 		private long time;
 		public PauseAction(long milliseconds) {
@@ -125,13 +280,8 @@ public class FurbyMotionController {
 		}
 		@Override
 		public void execute() {
-			pin.low();
-			try {
-				Thread.sleep(time);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			setOff();
+			pause(time);
 			
 		}
 	}
@@ -140,10 +290,12 @@ public class FurbyMotionController {
 
 		@Override
 		public void execute() {
+			seeking=true;
+			setForwards();
 			while(!atHome) {
-				pin.pulse(100, true);
+				pause(100);
 			}
-			
+			System.out.println("at home");
 		}
 		
 	
@@ -158,7 +310,8 @@ public class FurbyMotionController {
 		@Override
 		public void execute() {
 			System.out.println("mouth for "+time);
-			pin.pulse(time, true);
+			setForwards();
+			pause(time);
 			
 		}
 		
