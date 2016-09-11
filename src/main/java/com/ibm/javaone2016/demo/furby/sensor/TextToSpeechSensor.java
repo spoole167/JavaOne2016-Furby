@@ -60,7 +60,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 
 	@Override
 	public String[] getCommands() {
-		return new String[] { "say", "sleep" };
+		return new String[] { "say", "sleep","home" };
 	}
 
 	@Override
@@ -69,6 +69,10 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		try {
 			switch (command) {
 
+			case "home" :
+				furby.goHome();
+				break;
+				
 			case "say":
 				wake(object);
 				say(object);
@@ -123,7 +127,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 					furby.wake();
 					
 					for(float f:marks) {
-						actions.add(furby.new OpenMouthAction((long) f*1000));
+						actions.add(furby.new OpenMouthAction((long) (f*1000.0)));
 						actions.add(furby.new PauseAction(1000));
 					}
 					

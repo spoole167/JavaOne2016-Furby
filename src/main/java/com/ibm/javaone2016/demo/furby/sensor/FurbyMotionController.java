@@ -135,6 +135,19 @@ public class FurbyMotionController {
 			
 		}
 	}
+	
+	public class GoHomeAction implements Action {
+
+		@Override
+		public void execute() {
+			while(!atHome) {
+				pin.pulse(100, true);
+			}
+			
+		}
+		
+	
+	}
 	public class OpenMouthAction implements Action {
 
 		private long time;
@@ -152,6 +165,11 @@ public class FurbyMotionController {
 	}
 	public void run(List<Action> incoming) {
 		actions.addAll(incoming);
+		
+	}
+
+	public void goHome() {
+		actions.add(new GoHomeAction());
 		
 	}
 }
