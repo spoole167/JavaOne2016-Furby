@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import com.ibm.javaone2016.demo.furby.sensor.FurbyMotionController.TestAction;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
@@ -254,6 +255,18 @@ public class FurbyMotionController {
 		
 	}
 
+	public class TestAction implements Action {
+
+		@Override
+		public void execute() {
+			setForwards();
+			pause(2000);
+			setBackwards();
+			pause(2000);
+			
+		}
+		
+	}
 	
 	public class Chat implements Action {
 
@@ -361,6 +374,11 @@ public class FurbyMotionController {
 
 	public void goHome() {
 		actions.add(new GoHomeAction());
+		
+	}
+
+	public void run(TestAction testAction) {
+		actions.add(testAction);
 		
 	}
 }

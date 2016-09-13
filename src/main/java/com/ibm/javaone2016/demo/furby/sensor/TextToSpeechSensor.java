@@ -58,7 +58,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 
 	@Override
 	public String[] getCommands() {
-		return new String[] { "say", "sleep","home" };
+		return new String[] { "say", "sleep","home","test" };
 	}
 
 	@Override
@@ -78,6 +78,11 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			
 			case "sleep":
 				sleep(object);
+				break;
+				
+
+			case "test":
+				furby.run(furby.new TestAction());
 				break;
 			}
 			
