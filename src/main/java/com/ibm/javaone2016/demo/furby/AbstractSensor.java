@@ -10,7 +10,7 @@ import com.google.gson.JsonObject;
 
 public abstract class AbstractSensor implements Sensor{
 
-	protected static final Logger LOG = LoggerFactory.getLogger(Sensor.class);
+	public static final Logger LOG = LoggerFactory.getLogger(Sensor.class);
 	private boolean keepAlive = true;
 	
 	

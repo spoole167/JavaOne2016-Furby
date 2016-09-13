@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import com.ibm.javaone2016.demo.furby.AbstractSensor;
 import com.ibm.javaone2016.demo.furby.sensor.FurbyMotionController.TestAction;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
@@ -63,7 +64,7 @@ public class FurbyMotionController {
 		try {
 			counter+=time;
 			Thread.sleep(time);
-			System.out.println(">"+counter);
+			//System.out.println(">"+counter);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -118,7 +119,9 @@ public class FurbyMotionController {
 					Action a;
 					try {
 						a = actions.take();
+						AbstractSensor.LOG.info("action {}",a.getClass().getName());
 						a.execute();
+						AbstractSensor.LOG.info("action completed");
 						setOff();
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
@@ -380,7 +383,7 @@ public class FurbyMotionController {
 		
 	}
 
-	public void run(TestAction testAction) {
+	public void run(Action testAction) {
 		actions.add(testAction);
 		
 	}
