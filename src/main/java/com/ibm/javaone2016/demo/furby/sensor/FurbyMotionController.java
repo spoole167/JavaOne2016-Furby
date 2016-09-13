@@ -261,8 +261,10 @@ public class FurbyMotionController {
 		public void execute() {
 			setForwards();
 			pause(2000);
+			System.out.println("forwards completed");
 			setBackwards();
 			pause(2000);
+			System.out.println("backwards completed");
 			
 		}
 		
