@@ -119,6 +119,7 @@ public class FurbyMotionController {
 					try {
 						a = actions.take();
 						a.execute();
+						setOff();
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -265,7 +266,7 @@ public class FurbyMotionController {
 			setBackwards();
 			pause(2000);
 			System.out.println("backwards completed");
-			
+			setOff();
 		}
 		
 	}
