@@ -166,6 +166,14 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		
 		String text = te.getAsString();
 		
+		String voice="en-US_LisaVoice";
+		
+		if(object.has("voice")) {
+				voice=object.get("voice").getAsString();
+				
+		}
+		
+		
 		
 		final List<Float> marks=new ArrayList<>();
 		final List<byte[]> audio=new ArrayList<>();
@@ -202,10 +210,11 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		 sb.append("</speak>");
 		 }
 		 
+		 //en-US_MichaelVoice
 		 // make call...
 		
 			WebSocket socket=factory.setConnectionTimeout(5000)
-			 .createSocket("https://stream.watsonplatform.net/text-to-speech/api/v1/synthesize?voice=en-US_AllisonVoice&watson-token="+token)
+			 .createSocket("https://stream.watsonplatform.net/text-to-speech/api/v1/synthesize?voice="+voice+"&watson-token="+token)
 			 .addListener(new WebSocketAdapter() {
 				 public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception
 				    {
