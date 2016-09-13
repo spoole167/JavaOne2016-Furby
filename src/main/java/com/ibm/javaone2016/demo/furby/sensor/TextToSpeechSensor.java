@@ -217,9 +217,10 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		 
 		 //en-US_MichaelVoice
 		 // make call...
-		
+		String url="https://stream.watsonplatform.net/text-to-speech/api/v1/synthesize?voice="+voice+"&watson-token="+token;
+		LOG.info("url:{}",url);
 			WebSocket socket=factory.setConnectionTimeout(5000)
-			 .createSocket("https://stream.watsonplatform.net/text-to-speech/api/v1/synthesize?voice="+voice+"&watson-token="+token)
+			 .createSocket(url)
 			 .addListener(new WebSocketAdapter() {
 				 public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception
 				    {
