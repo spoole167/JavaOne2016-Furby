@@ -60,6 +60,22 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			String line=br.readLine();
 			if(line==null) break;
 			furtunes.add(line);
+			
+			StringBuilder chat=new StringBuilder();
+			boolean f=true;
+			for(String p:line.split(" ")) {
+				for(int i=0;i<p.length();i++) {
+					if(f) {
+						chat.append("f");
+					} else {
+						chat.append("b");
+					}
+				}
+				f=!f;
+				chat.append("ppp");
+			}
+			furchat.add(chat.toString());
+			
 		}
 		
 	}
@@ -71,6 +87,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 	WebSocketFactory factory = new WebSocketFactory();
 	private FurbyMotionController furby=new FurbyMotionController();
 	private List<String> furtunes=new LinkedList<>();
+	private List<String> furchat=new LinkedList<>();
 	@Override
 	public void start() {
 
@@ -135,7 +152,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		JsonObject o=new JsonObject();
 		o.addProperty("text",saying);
 		o.addProperty("asis", true);
-		
+		o.addProperty("chat",furchat.get(fortune));
 		say(o);
 		
 	}
