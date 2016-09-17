@@ -54,7 +54,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 
 	private void loadFurtunes() throws IOException {
 		
-		InputStreamReader isr=new InputStreamReader(getClass().getResourceAsStream("furtunes.txt"));
+		InputStreamReader isr=new InputStreamReader(getClass().getResourceAsStream("/furtunes.txt"));
 		BufferedReader br=new BufferedReader(isr);
 		while(true) {
 			String line=br.readLine();
