@@ -1,13 +1,17 @@
 package com.ibm.javaone2016.demo.furby.sensor;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
@@ -37,12 +41,36 @@ import com.squareup.okhttp.Request;
  * 
  */
 public class TextToSpeechSensor extends AbstractActiveSensor {
+	public TextToSpeechSensor() {
+		super();
+		try {
+			loadFurtunes();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+	private void loadFurtunes() throws IOException {
+		
+		InputStreamReader isr=new InputStreamReader(getClass().getResourceAsStream("furtunes.txt"));
+		BufferedReader br=new BufferedReader(isr);
+		while(true) {
+			String line=br.readLine();
+			if(line==null) break;
+			furtunes.add(line);
+		}
+		
+	}
+
 	private String userid;
 	private String password;
+	private Random r=new Random();
 	
 	WebSocketFactory factory = new WebSocketFactory();
 	private FurbyMotionController furby=new FurbyMotionController();
-	
+	private List<String> furtunes=new LinkedList<>();
 	@Override
 	public void start() {
 
@@ -58,7 +86,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 
 	@Override
 	public String[] getCommands() {
-		return new String[] { "say", "sleep","home","test" };
+		return new String[] { "say", "sleep","home","test","furtune" };
 	}
 
 	@Override
@@ -76,6 +104,12 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 				say(object);
 				break;
 			
+			case "furtune":
+				wake(object);
+				furtune(object);
+				break;
+			
+				
 			case "sleep":
 				sleep(object);
 				break;
@@ -92,6 +126,18 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			e.printStackTrace();
 		}
 
+	}
+
+	private void furtune(JsonObject object) throws IOException {
+		
+		int fortune=r.nextInt(furtunes.size());
+		String saying=furtunes.get(fortune);
+		JsonObject o=new JsonObject();
+		o.addProperty("text",saying);
+		o.addProperty("asis", true);
+		
+		say(o);
+		
 	}
 
 	private void wake(JsonObject object) {
