@@ -153,15 +153,16 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 	}
 
 	private void furbish(JsonObject object) {
-		JsonElement te = object.get("text");
+		JsonElement te = object.get("say");
 		if (te == null)
 			return;
 		
 		String text = te.getAsString();
 		
 		String chat=getChatString(text);
-		
-		CommandLine playCommandLine = CommandLine.parse("espeak -vjbo+f4 -s150 \""+text+"\"");
+		String cmd="espeak -vjbo+f4 -s150 \""+text+"\"";
+		LOG.info("furbish {}",cmd);
+		CommandLine playCommandLine = CommandLine.parse(cmd);
 		DefaultExecutor musicExecutor = new DefaultExecutor();
 		musicExecutor.setExitValue(0);
 		ExecuteWatchdog musicWatchdog = new ExecuteWatchdog(60000);
