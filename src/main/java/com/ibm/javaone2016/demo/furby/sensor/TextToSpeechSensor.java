@@ -52,6 +52,23 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		
 	}
 
+	private String getChatString(String line) {
+		
+		StringBuilder chat=new StringBuilder();
+		boolean f=true;
+		for(String p:line.split(" ")) {
+			for(int i=0;i<p.length();i++) {
+				if(f) {
+					chat.append("f");
+				} else {
+					chat.append("b");
+				}
+			}
+			f=!f;
+			chat.append("ppp");
+		}
+		return chat.toString();
+	}
 	private void loadFurtunes() throws IOException {
 		
 		InputStreamReader isr=new InputStreamReader(getClass().getResourceAsStream("/furtunes.txt"));
@@ -60,21 +77,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			String line=br.readLine();
 			if(line==null) break;
 			furtunes.add(line);
-			
-			StringBuilder chat=new StringBuilder();
-			boolean f=true;
-			for(String p:line.split(" ")) {
-				for(int i=0;i<p.length();i++) {
-					if(f) {
-						chat.append("f");
-					} else {
-						chat.append("b");
-					}
-				}
-				f=!f;
-				chat.append("ppp");
-			}
-			furchat.add(chat.toString());
+			furchat.add(getChatString(line));
 			
 		}
 		
@@ -126,6 +129,10 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 				furtune(object);
 				break;
 			
+			case "furbish":
+				wake(object);
+				furbish(object);
+				break;
 				
 			case "sleep":
 				sleep(object);
@@ -143,6 +150,50 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 			e.printStackTrace();
 		}
 
+	}
+
+	private void furbish(JsonObject object) {
+		JsonElement te = object.get("text");
+		if (te == null)
+			return;
+		
+		String text = te.getAsString();
+		
+		String chat=getChatString(text);
+		
+		CommandLine playCommandLine = CommandLine.parse("espeak -vjbo+f4 -s150 \""+text+"\"");
+		DefaultExecutor musicExecutor = new DefaultExecutor();
+		musicExecutor.setExitValue(0);
+		ExecuteWatchdog musicWatchdog = new ExecuteWatchdog(60000);
+		DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+		musicExecutor.setWatchdog(musicWatchdog);
+		
+		
+		Thread t=new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				try {
+					
+					List<Action> actions=new LinkedList<>();
+					actions.add(furby.new Chat(chat));
+					
+					furby.run(actions);
+					// kick off music.
+					musicExecutor.execute(playCommandLine,resultHandler);
+			
+				} catch (ExecuteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
+		
+		t.start();
+		
 	}
 
 	private void furtune(JsonObject object) throws IOException {
