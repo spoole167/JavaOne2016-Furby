@@ -106,7 +106,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 
 	@Override
 	public String[] getCommands() {
-		return new String[] { "say", "sleep","home","test","furtune" };
+		return new String[] { "say", "sleep","home","test","furtune","furbish" };
 	}
 
 	@Override
