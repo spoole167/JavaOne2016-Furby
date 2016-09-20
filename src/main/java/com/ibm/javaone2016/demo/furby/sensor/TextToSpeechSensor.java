@@ -6,18 +6,22 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Consumer;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.io.IOUtils;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -35,6 +39,8 @@ import com.squareup.okhttp.Credentials;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 
+import netscape.javascript.JSObject;
+
 /*
  * Output sensor for converting a command into speech 
  * and outputing via available audio 
@@ -43,12 +49,9 @@ import com.squareup.okhttp.Request;
 public class TextToSpeechSensor extends AbstractActiveSensor {
 	public TextToSpeechSensor() {
 		super();
-		try {
-			loadFurtunes();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
+		loadFurtunes();
+		
 		
 	}
 
@@ -69,17 +72,52 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		}
 		return chat.toString();
 	}
-	private void loadFurtunes() throws IOException {
+	private void loadFurtunes()  {
+	
+		String body=null;
+		try {
+		// try to get data from web
+		URL url = new URL("https://furby-monitor.mybluemix.net/furtunes");
+		URLConnection con = url.openConnection();
+		InputStream in = con.getInputStream();
+		String encoding = con.getContentEncoding();
+		encoding = encoding == null ? "UTF-8" : encoding;
+		body = IOUtils.toString(in, encoding);
 		
-		InputStreamReader isr=new InputStreamReader(getClass().getResourceAsStream("/furtunes.txt"));
-		BufferedReader br=new BufferedReader(isr);
-		while(true) {
-			String line=br.readLine();
-			if(line==null) break;
-			furtunes.add(line);
-			furchat.add(getChatString(line));
-			
+	} catch(IOException ioe) {
+		ioe.printStackTrace();
+	}
+		
+		if(body==null) {
+			try {
+				body=IOUtils.toString(getClass().getResourceAsStream("/furtunes.txt"), "UTF-8");
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
+	
+		if(body==null) {
+			furtunes=new JsonArray();
+			return;
+		}
+		JsonParser p=new JsonParser();
+		JsonElement jfurtunes=p.parse(body);
+		furtunes=jfurtunes.getAsJsonObject().getAsJsonArray("furtunes");
+		
+		for(JsonElement e:furtunes) {
+			
+			JsonObject o=e.getAsJsonObject();
+			String text=o.get("text").getAsString();
+			if(o.has("chat")==false) {
+				o.addProperty("chat", getChatString(text));
+			}
+			if(o.has("voice")==false) {
+				o.addProperty("voice", "en-US_LisaVoice");
+			}
+		}
+		
+	
 		
 	}
 
@@ -89,8 +127,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 	
 	WebSocketFactory factory = new WebSocketFactory();
 	private FurbyMotionController furby=new FurbyMotionController();
-	private List<String> furtunes=new LinkedList<>();
-	private List<String> furchat=new LinkedList<>();
+	private JsonArray furtunes;
 	@Override
 	public void start() {
 
@@ -200,12 +237,14 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 	private void furtune(JsonObject object) throws IOException {
 		
 		int fortune=r.nextInt(furtunes.size());
-		String saying=furtunes.get(fortune);
-		JsonObject o=new JsonObject();
-		o.addProperty("text",saying);
-		o.addProperty("asis", true);
-		o.addProperty("chat",furchat.get(fortune));
-		say(o);
+		JsonObject o=furtunes.get(fortune).getAsJsonObject();
+		
+		
+		JsonObject obj=new JsonObject();
+		obj.add("text", o.get("text"));
+		obj.addProperty("asis", true);
+		obj.add("chat",o.get("chat"));
+		say(obj);
 		
 	}
 

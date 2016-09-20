@@ -64,7 +64,7 @@ public class FurbyMotionController {
 		try {
 			counter+=time;
 			Thread.sleep(time);
-			//System.out.println(">"+counter);
+			//	System.out.println(">"+counter);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -85,12 +85,17 @@ public class Main {
 		}
 		// add a default if nothing registered
 
-		if (sensorList == null || sensorList.entrySet().isEmpty()) {
+		if (sensorList == null) {
 			sensorList = new JsonObject();
-			sensorList.add(HEATBEAT_CLASS_NAME, new JsonObject());
+		
 
 		}
 
+		// if heatbeat class missing add it..
+		if(!sensorList.has(HEATBEAT_CLASS_NAME)) {
+			sensorList.add(HEATBEAT_CLASS_NAME, new JsonObject());
+		}
+			
 		// register  sensors
 		
 		for (Map.Entry<String, JsonElement> m : sensorList.entrySet()) {
@@ -101,6 +106,9 @@ public class Main {
 				System.out.println("registering "+sensorClass);
 				controller.addService(service);
 				service.configure(m.getValue().getAsJsonObject());
+			}
+			else {
+				System.out.println("could not register "+sensorClass);
 			}
 
 		}
@@ -131,7 +139,7 @@ public class Main {
  
 			return service;
 
-		} catch (Exception e) {
+		} catch (Throwable e) {
 
 			e.printStackTrace();
 		}
