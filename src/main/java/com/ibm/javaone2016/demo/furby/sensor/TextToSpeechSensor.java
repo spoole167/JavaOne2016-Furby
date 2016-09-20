@@ -151,6 +151,10 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 				furby.goHome();
 				break;
 				
+			case "reload" :
+				loadFurtunes();
+				break;
+				
 			case "say":
 				wake(object);
 				say(object);
@@ -183,6 +187,8 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		}
 
 	}
+
+	
 
 	private void furbish(JsonObject object) {
 		JsonElement te = object.get("say");
@@ -252,7 +258,7 @@ public class TextToSpeechSensor extends AbstractActiveSensor {
 		
 	}
 
-	private void say(JsonObject object) throws IOException, IOException {
+	private synchronized void say(JsonObject object) throws IOException, IOException {
 		
 		Object[] data=getAudioTranslationWithMarks(object);
 		File sound=(File) data[0];
